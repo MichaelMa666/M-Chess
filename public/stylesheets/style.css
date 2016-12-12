@@ -1,0 +1,84 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+#content{
+	padding: 20px;
+	width: 400px;
+	background-image: url("/images/chessBoard.png");
+}
+#chessboard{
+	color: rgba(0, 0, 0, .2);
+	width: 450px;
+	height: 450px;
+	border-left-width: 1px;
+}
+
+.chesscell{
+	float: left;
+	width: 48px;
+	height: 48px;
+	border: 1px solid red;
+	/*border-width: 1px 0.5px 0.5px */
+}
+.battlefield{
+	float: left;
+	width: 398px;
+	height: 48px;
+	font-family: LiSu;
+	font-size: 40px;
+	text-align: center;
+	color: red;
+	border: 2px solid red;
+}
+.pieces{
+	position: absolute;
+	width:35px;
+	margin-left: -20px;
+	margin-top: -20px;
+	height: 35px;
+	border-radius: 20px;
+	border: 2px solid red;
+	/*background-image: url("/images/pieces.png"); */
+	font-size: 35px;
+	font-family: LiSu;
+	color:black;
+	text-align: center;
+	vertical-align: middle;
+}
+.right_range{
+	border-right-width: 0px; 
+	border-top-width: 0px;
+	border-bottom-width: 0px;
+}
+.left_range{
+	border-left-width: 2px;
+}
+/*.campsite_l{
+	content: "";
+	position: absolute;
+	border-top:2px solid red;
+	width:68px;
+	transform: rotate(135deg);
+	transform-origin: 0% 0%;
+}
+.campsite_r{
+	content: "";
+	position: absolute;
+	border-top:2px solid red;
+	width:68px;
+	transform: rotate(45deg);
+	transform-origin: 0% 0%;
+}*/
+tr {
+	border: 1px solid blue;
+}
+td{
+	border: 1px solid blue;
+	height: 40px;
+	width:40px;
+}

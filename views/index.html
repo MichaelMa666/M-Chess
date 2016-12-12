@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="icon" href="/images/888.png"></link>
+    <script type="text/javascript" src="/javascripts/jquery-1.9.1.js"></script>
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    <p>Welcome to <%= title %></p>
+    <div>
+    	<input type="button" id="startbtn" value="Start"/>
+        <div id="chessboard" >
+            <canvas id="mycanvas" width="740" height="820"></canvas>
+            <canvas id="mycanvas2" width="740" height="820"></canvas>
+        </div>
+    </div>
+  </body>
+  <script type="text/javascript">
+        $('#startbtn').click(function(){
+            draw();
+        });
+            
+        var NUMBER_OF_ROWS = 9,
+            NUMBER_OF_COLS = 8,
+            LEFT_OFFSET = 50,
+            UP_OFFSET = 50,
+            PIECE_R = 60;
+
+        var BLOCK_COLOUR = '#eee';
+
+        var IN_PLAY = 0;
+
+        var PIECE_CASTLE = 0,
+            PIECE_KNIGHT = 1,
+            PIECE_ELEPHANT = 2,
+            PIECE_GUARD = 3,
+            PIECE_KING = 4,
+            PIECE_GUN = 5;
+            PIECE_PAWN = 6;
+
+        var PIECE_WIDTH = 674 / 7 ,
+            PIECE_HEIGHT = 201 / 2;
+        function draw()
+        {
+            // Main entry point got the HTML5 chess board example
+            canvas = document.getElementById('mycanvas');          
+            ctx = canvas.getContext('2d');
+
+            // Calculdate the precise block size
+            BLOCK_SIZE = (canvas.height - UP_OFFSET * 2) / NUMBER_OF_ROWS;
+             
+            // Draw the background
+            drawBoard();
+     
+            defaultPositions();
+            // Draw pieces
+
+            loadPiecesImages(json.black, function(images) {
+                for(var i = 0; i < json.black.length; i ++){
+                    ctx.drawImage(images[json.black[i]["id"]], 0, 0, 160, 160, (json.black[i]["col"]*BLOCK_SIZE-13), (json.black[i]["row"]*BLOCK_SIZE - 8), 160, 160);
+                }
+            });
+            loadPiecesImages(json.red, function(images) {
+                for(var i = 0; i < json.red.length; i ++){
+                    ctx.drawImage(images[json.red[i]["id"]], 0, 0, 160, 160, (json.red[i]["col"]*BLOCK_SIZE-13), (json.red[i]["row"]*BLOCK_SIZE - 8), 160, 160);
+                }
+            });
+            canvas.addEventListener('click', board_click, false);
+        } 
+/* Important！！！http://www.html5canvastutorials.com/tutorials/html5-canvas-image-loader/ */
+/* ** Discussion
+ *      When HTML5 Canvas applications require multiple images, it's usually a good idea to load 
+ *      all ofthe images before drawing on the canvas. To simplify the loading process, it's 
+ *      convenient to use an image loader function that takes in a hash of image sources, creates 
+ *      an hash of images, and then calls a user defined function whenever all of the images have 
+ *      loaded.
+ */      
+        function loadPiecesImages(sources, callback) {
+            var images = {};
+            var loadedImages = 0;
+            var numImages = sources.length;
+            // get num of sources
+            
+            for(var i = 0 ; i < numImages; i ++) {
+              images[sources[i]["id"]] = new Image();
+              images[sources[i]["id"]].onload = function() {
+                if(++loadedImages >= numImages) {
+                  callback(images);
+                }
+              };
+              images[sources[i]["id"]].src = sources[i]["src"];
+            }
+        }
+
+        function drawBoard()
+        {    
+            ctx.fillStyle = '#eee';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.strokeStyle = "black";
+            ctx.strokeRect(LEFT_OFFSET, UP_OFFSET, canvas.width-LEFT_OFFSET*2, canvas.height-UP_OFFSET*2);
+            for(iRowCounter = 0; iRowCounter <= NUMBER_OF_ROWS; iRowCounter ++){
+                ctx.moveTo(LEFT_OFFSET, iRowCounter*BLOCK_SIZE+UP_OFFSET);
+                ctx.lineTo(canvas.width - LEFT_OFFSET,iRowCounter*BLOCK_SIZE+UP_OFFSET);
+                ctx.stroke();
+            }
+            for(iColCounter = 0; iColCounter <= NUMBER_OF_COLS; iColCounter ++){
+                ctx.moveTo(LEFT_OFFSET + iColCounter * BLOCK_SIZE, UP_OFFSET);
+                ctx.lineTo(LEFT_OFFSET + iColCounter * BLOCK_SIZE, UP_OFFSET + BLOCK_SIZE * 4);
+
+                ctx.moveTo(LEFT_OFFSET + iColCounter * BLOCK_SIZE, UP_OFFSET + BLOCK_SIZE * 5);
+                ctx.lineTo(LEFT_OFFSET + iColCounter * BLOCK_SIZE, UP_OFFSET + BLOCK_SIZE * 9);
+                ctx.stroke();
+            }
+            //斜线
+                ctx.moveTo(LEFT_OFFSET + BLOCK_SIZE * 3, UP_OFFSET);
+                ctx.lineTo(LEFT_OFFSET + BLOCK_SIZE * 5, UP_OFFSET + BLOCK_SIZE * 2);
+
+                ctx.moveTo(LEFT_OFFSET + BLOCK_SIZE * 5, UP_OFFSET);
+                ctx.lineTo(LEFT_OFFSET + BLOCK_SIZE * 3, UP_OFFSET + BLOCK_SIZE * 2);
+
+                ctx.moveTo(LEFT_OFFSET + BLOCK_SIZE * 3, UP_OFFSET + BLOCK_SIZE * 7);
+                ctx.lineTo(LEFT_OFFSET + BLOCK_SIZE * 5, UP_OFFSET + BLOCK_SIZE * 9);
+                
+                ctx.moveTo(LEFT_OFFSET + BLOCK_SIZE * 5, UP_OFFSET + BLOCK_SIZE * 7);
+                ctx.lineTo(LEFT_OFFSET + BLOCK_SIZE * 3, UP_OFFSET + BLOCK_SIZE * 9);
+                
+                ctx.stroke();
+            // //眼位
+                drawEye(LEFT_OFFSET + BLOCK_SIZE, UP_OFFSET + BLOCK_SIZE * 2);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 7, UP_OFFSET + BLOCK_SIZE * 2);
+                drawEye(LEFT_OFFSET, UP_OFFSET + BLOCK_SIZE * 3);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 2, UP_OFFSET + BLOCK_SIZE * 3);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 4, UP_OFFSET + BLOCK_SIZE * 3);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 6, UP_OFFSET + BLOCK_SIZE * 3);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 8, UP_OFFSET + BLOCK_SIZE * 3);
+
+                drawEye(LEFT_OFFSET + BLOCK_SIZE, UP_OFFSET + BLOCK_SIZE * 7);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 7, UP_OFFSET + BLOCK_SIZE * 7);
+                drawEye(LEFT_OFFSET, UP_OFFSET + BLOCK_SIZE * 6);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 2, UP_OFFSET + BLOCK_SIZE * 6);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 4, UP_OFFSET + BLOCK_SIZE * 6);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 6, UP_OFFSET + BLOCK_SIZE * 6);
+                drawEye(LEFT_OFFSET + BLOCK_SIZE * 8, UP_OFFSET + BLOCK_SIZE * 6);
+            // //楚河汉界 save() 和 restore() 很重要啊
+                ctx.save();
+                ctx.font = "60px 隶书";
+                ctx.fillStyle = "#36648B";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText("楚", LEFT_OFFSET + BLOCK_SIZE * 1.5, UP_OFFSET + BLOCK_SIZE *4.5);
+                ctx.fillText("河", LEFT_OFFSET + BLOCK_SIZE * 2.5, UP_OFFSET + BLOCK_SIZE *4.5);
+
+                ctx.rotate(180*Math.PI/180);
+                ctx.fillText("界", -(LEFT_OFFSET + BLOCK_SIZE * 5.5), -(UP_OFFSET + BLOCK_SIZE *4.5));
+                ctx.fillText("漢", -(LEFT_OFFSET + BLOCK_SIZE * 6.5), -(UP_OFFSET + BLOCK_SIZE *4.5));
+                ctx.restore();
+        }
+        function drawEye(x, y){
+            if (x > LEFT_OFFSET && x < LEFT_OFFSET + BLOCK_SIZE * 8){
+                // left up
+                ctx.moveTo(x - 5, y - 15);
+                ctx.bezierCurveTo(x - 5, y - 5, x - 5, y - 5, x - 15, y - 5);
+                // left down
+                ctx.moveTo(x - 5, y + 15);
+                ctx.bezierCurveTo(x - 5, y + 5, x - 5, y + 5, x - 15, y + 5);
+                // right up
+                ctx.moveTo(x + 5, y - 15);
+                ctx.bezierCurveTo(x + 5, y - 5, x + 5, y - 5, x + 15, y - 5);
+                // right down
+                ctx.moveTo(x + 5, y + 15);
+                ctx.bezierCurveTo(x + 5, y + 5, x + 5, y + 5, x + 15, y + 5);
+                ctx.stroke();
+            }
+            if ( x == LEFT_OFFSET ){
+                // right up
+                ctx.moveTo(x + 5, y - 15);
+                ctx.bezierCurveTo(x + 5, y - 5, x + 5, y - 5, x + 15, y - 5);
+                // right down
+                ctx.moveTo(x + 5, y + 15);
+                ctx.bezierCurveTo(x + 5, y + 5, x + 5, y + 5, x + 15, y + 5);
+                ctx.stroke();
+            }
+            if(x == LEFT_OFFSET + BLOCK_SIZE * 8){
+                // left up
+                ctx.moveTo(x - 5, y - 15);
+                ctx.bezierCurveTo(x - 5, y - 5, x - 5, y - 5, x - 15, y - 5);
+                // left down
+                ctx.moveTo(x - 5, y + 15);
+                ctx.bezierCurveTo(x - 5, y + 5, x - 5, y + 5, x - 15, y + 5);
+                ctx.stroke(); 
+            }
+        }
+
+        function getImageCoords(pieceCode, boolBlackTeam){
+            var imageCoords =  {
+                "x": pieceCode * PIECE_WIDTH,
+                "y": (boolBlackTeam ? 0 : PIECE_HEIGHT)
+            };
+
+            return imageCoords;
+        }
+
+        function defaultPositions()
+        {
+            json = 
+            {
+                "black": 
+                [
+                    {   
+                        "id": "castle_b1",
+                        "piece": PIECE_CASTLE,
+                        "row": 0,
+                        "col": 0,
+                        "src": "/images/castle_b.png",
+                        "status": IN_PLAY
+                    
+                    },
+                    {   
+                        "id": "knight_b1",
+                        "piece": PIECE_KNIGHT,
+                        "row": 0,
+                        "col": 1,
+                        "src": "/images/knight_b.png",
+                        "status": IN_PLAY
+                    },
+                    {   
+                        "id": "elephant_b1",
+                        "piece": PIECE_ELEPHANT,
+                        "row": 0,
+                        "col": 2,
+                        "src": "/images/elephant_b.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "guard_b1",
+                        "piece": PIECE_GUARD,
+                        "row": 0,
+                        "col": 3,
+                        "src": "/images/guard_b.png",
+                        "status": IN_PLAY
+                    },  
+                    {   
+                        "id": "king_b1",
+                        "piece": PIECE_KING,
+                        "row": 0,
+                        "col": 4,
+                        "src": "/images/king_b.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "guard_b2",
+                        "piece": PIECE_GUARD,
+                        "row": 0,
+                        "col": 5,
+                        "src": "/images/guard_b.png",
+                        "status": IN_PLAY
+                    },  
+                    {   
+                        "id": "elephant_b2",
+                        "piece": PIECE_ELEPHANT,
+                        "row": 0,
+                        "col": 6,
+                        "src": "/images/elephant_b.png",
+                        "status": IN_PLAY
+                    },
+                    {   
+                        "id": "knight_b2",
+                        "piece": PIECE_KNIGHT,
+                        "row": 0,
+                        "col": 7,
+                        "src": "/images/knight_b.png",
+                        "status": IN_PLAY
+                    },
+                    {   
+                        "id": "castle_b2",
+                        "piece": PIECE_CASTLE,
+                        "row": 0,
+                        "col": 8,
+                        "src": "/images/castle_b.png",
+                        "status": IN_PLAY
+                    },
+                    {   
+                        "id": "gun_b1",
+                        "piece": PIECE_GUN,
+                        "row": 2,
+                        "col": 1,
+                        "src": "/images/gun_b.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "gun_b2",
+                        "piece": PIECE_GUN,
+                        "row": 2,
+                        "col": 7,
+                        "src": "/images/gun_b.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id":"pawn_b1",
+                        "piece": PIECE_PAWN,
+                        "row": 3,
+                        "col": 0,
+                        "src": "/images/pawn_b.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id":"pawn_b2",
+                        "piece": PIECE_PAWN,
+                        "row": 3,
+                        "col": 2,
+                        "src": "/images/pawn_b.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id":"pawn_b3",
+                        "piece": PIECE_PAWN,
+                        "row": 3,
+                        "col": 4,
+                        "src": "/images/pawn_b.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id":"pawn_b4",
+                        "piece": PIECE_PAWN,
+                        "row": 3,
+                        "col": 6,
+                        "src": "/images/pawn_b.png",
+                        "status": IN_PLAY
+                    },  
+                    {
+                        "id":"pawn_b5",
+                        "piece": PIECE_PAWN,
+                        "row": 3,
+                        "col": 8,
+                        "src": "/images/pawn_b.png",
+                        "status": IN_PLAY
+                    }
+                ],
+                "red": 
+                [
+                    {   
+                        "id":"castle_r1",
+                        "piece": PIECE_CASTLE,
+                        "row": 9,
+                        "col": 0,
+                        "src": "/images/castle_r.png",
+                        "status": IN_PLAY
+                    },
+                
+                    {   "id": "knight_r1",
+                        "piece": PIECE_KNIGHT,
+                        "row": 9,
+                        "col": 1,
+                        "src": "/images/knight_r.png",
+                        "status": IN_PLAY
+                    },
+                    {   
+                        "id": "elephant_r1",
+                        "piece": PIECE_ELEPHANT,
+                        "row": 9,
+                        "col": 2,
+                        "src": "/images/elephant_r.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "guard_r1",
+                        "piece": PIECE_GUARD,
+                        "row": 9,
+                        "col": 3,
+                        "src": "/images/guard_r.png",
+                        "status": IN_PLAY
+                    },  
+                    {   
+                        "id": "king_r1",
+                        "piece": PIECE_KING,
+                        "row": 9,
+                        "col": 4,
+                        "src": "/images/king_r.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "guard_r2",
+                        "piece": PIECE_GUARD,
+                        "row": 9,
+                        "col": 5,
+                        "src": "/images/guard_r.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "elephant_r2",
+                        "piece": PIECE_ELEPHANT,
+                        "row": 9,
+                        "col": 6,
+                        "src": "/images/elephant_r.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "knight_r2",
+                        "piece": PIECE_KNIGHT,
+                        "row": 9,
+                        "col": 7,
+                        "src": "/images/knight_r.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "castle_r2",
+                        "piece": PIECE_CASTLE,
+                        "row": 9,
+                        "col": 8,
+                        "src": "/images/castle_r.png",
+                        "status": IN_PLAY
+                    },
+                    {   "id": "pawn_r1",
+                        "piece": PIECE_PAWN,
+                        "row": 6,
+                        "col": 0,
+                        "src": "/images/pawn_r.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "pawn_r2",
+                        "piece": PIECE_PAWN,
+                        "row": 6,
+                        "col": 2,
+                        "src": "/images/pawn_r.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "pawn_r3",
+                        "piece": PIECE_PAWN,
+                        "row": 6,
+                        "col": 4,
+                        "src": "/images/pawn_r.png",
+                        "status": IN_PLAY
+                    },
+                    {
+                        "id": "pawn_r4",
+                        "piece": PIECE_PAWN,
+                        "row": 6,
+                        "col": 6,
+                        "src": "/images/pawn_r.png",
+                        "status": IN_PLAY
+                    },  
+                    {
+                        "id": "pawn_r5",
+                        "piece": PIECE_PAWN,
+                        "row": 6,
+                        "col": 8,
+                        "src": "/images/pawn_r.png",
+                        "status": IN_PLAY
+                    }
+                ]       
+            };
+
+        }
+  </script>
+</html>
